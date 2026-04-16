@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Artist {
+  id               String          @id @default(uuid())
+  email            String          @unique
+  firstName        String
+  lastName         String
+  displayName      String
+  phone            String?
+  location         String?
+  website          String?
+  profileImageUrl  String?
+
+  // Artistic Practice (Step 2)
+  bio              String?
+  artistStatement  String?
+  skillLevel       SkillLevel      @default(BEGINNER)
+  primaryMaterials String?         // JSON array stored as string
+  techniques       String?         // JSON array stored as string
+  yearsExperience  Int             @default(0)
+
+  // Certification (Step 3)
+  certificationLevel CertificationLevel @default(NONE)
+
+  // Registration state
+  registrationStep   Int            @default(1)
+  registrationComplete Boolean      @default(false)
+
+  // Payment
+  stripeCustomerId   String?
+  stripeAccountId    String?
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  artworks         Artwork[]
+  certifications   Certification[]
+  commissionsAsArtist Commission[]  @relation("ArtistCommissions")
+  commissionsAsUser   Commission[]  @relation("UserCommissions")
+
+  @@index([email])
+  @@index([certificationLevel])
+}
+
+model Artwork {
+  id               String       @id @default(uuid())
+  artistId         String
+  artist           Artist       @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  title            String
+  description      String?
+  material         String       // Primary recycled material
+  materialsUsed    String?      // JSON array - all materials
+  dimensions       String?      // e.g., "30x40x10 cm"
+  weight           Float?       // in kg
+  price            Float
+  currency         String       @default("EUR")
+
+  // Status
+  status           ArtworkStatus @default(DRAFT)
+  isFeatured       Boolean       @default(false)
+
+  // Images
+  images           ArtworkImage[]
+
+  // Certification documents for this artwork
+  certificationDocs String?     // JSON array of doc URLs
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([artistId])
+  @@index([status])
+  @@index([material])
+}
+
+model ArtworkImage {
+  id          String   @id @default(uuid())
+  artworkId   String
+  artwork     Artwork  @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  url         String
+  altText     String?
+  isPrimary   Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([artworkId])
+}
+
+model Certification {
+  id            String              @id @default(uuid())
+  artistId      String
+  artist        Artist              @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  level         CertificationLevel
+  status        CertificationStatus @default(PENDING)
+
+  // Evidence
+  evidenceLinks String?             // JSON array of URLs
+  notes         String?
+  reviewerNotes String?
+
+  submittedAt   DateTime            @default(now())
+  reviewedAt    DateTime?
+
+  @@index([artistId])
+  @@index([status])
+}
+
+model Commission {
+  id            String           @id @default(uuid())
+  userId        String
+  user          Artist           @relation("UserCommissions", fields: [userId], references: [id])
+  artistId      String
+  artist        Artist           @relation("ArtistCommissions", fields: [artistId], references: [id])
+
+  requirements  String
+  materials     String?          // Preferred recycled materials
+  budget        Float
+  currency      String           @default("EUR")
+  timeline      String?          // e.g., "2-4 weeks"
+  status        CommissionStatus @default(INQUIRY)
+
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([artistId])
+  @@index([status])
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  MASTER
+}
+
+enum CertificationLevel {
+  NONE
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum CertificationStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum ArtworkStatus {
+  DRAFT
+  PENDING_REVIEW
+  LISTED
+  SOLD
+  ARCHIVED
+}
+
+enum CommissionStatus {
+  INQUIRY
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
