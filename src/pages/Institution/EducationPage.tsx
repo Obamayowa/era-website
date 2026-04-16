@@ -8,7 +8,8 @@ import {
 import { SectionHeading } from '@/components/institution/SectionHeading'
 import { cn } from '@/lib/utils'
 
-/* ── Tab definitions ──────────────────────────────── */
+const WORKSHOP_IMAGE = 'https://static.prod-images.emergentagent.com/jobs/0abb3382-c7dc-49d3-9a90-e40de9d6fe8b/images/5df1270780bcd94b04aa83fdae2f027c05b5bcdc443241fccef06914d4b688de.jpeg'
+
 const tabs = [
   { id: 'workshops', label: 'Workshops', icon: BookOpen },
   { id: 'online', label: 'Online Courses', icon: Monitor },
@@ -18,7 +19,6 @@ const tabs = [
 
 type TabId = (typeof tabs)[number]['id']
 
-/* ── Data ──────────────────────────────────────────── */
 const workshops = [
   {
     title: 'Foundations of Recycled Art',
@@ -122,7 +122,6 @@ const residencySupport = [
   'Certification pathway fast-track',
 ]
 
-/* ── Subcomponents ─────────────────────────────────── */
 function WorkshopCard({ w, i }: { w: typeof workshops[number]; i: number }) {
   const levelColor: Record<string, string> = {
     Beginner: 'bg-accent/10 text-accent',
@@ -198,15 +197,11 @@ function SchoolCard({ s, i }: { s: typeof schoolPrograms[number]; i: number }) {
   )
 }
 
-/* ═══════════════════════
-   EDUCATION PAGE
-   ═════════════════════════ */
 export function EducationPage() {
   const [activeTab, setActiveTab] = useState<TabId>('workshops')
 
   return (
     <main>
-      {/* ── Hero ──────────────────────────────────── */}
       <section className="relative overflow-hidden bg-primary pt-32 pb-20 lg:pt-40 lg:pb-28" aria-label="Education hero">
         <div className="absolute inset-0 opacity-10" style={{
           backgroundImage: `radial-gradient(circle at 70% 30%, var(--color-accent) 0%, transparent 50%)`
@@ -236,10 +231,32 @@ export function EducationPage() {
         </div>
       </section>
 
-      {/* ── Tabbed Interface ──────────────────── */}
       <section className="py-16 lg:py-24" aria-label="Education programs">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Tab bar */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="aspect-video rounded-2xl overflow-hidden shadow-2xl"
+            >
+              <img
+                src={WORKSHOP_IMAGE}
+                alt="Community art workshop"
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </motion.div>
+            <div>
+              <SectionHeading
+                align="left"
+                label="Hands-On Learning"
+                title="Workshops for Every Skill Level"
+                subtitle="Join a global community of makers transforming discarded materials into fine art. Our expert instructors guide you through the process of material science and sculptural design."
+              />
+            </div>
+          </div>
+
           <div className="flex flex-wrap justify-center gap-2 mb-12" role="tablist">
             {tabs.map((tab) => {
               const Icon = tab.icon
@@ -263,7 +280,6 @@ export function EducationPage() {
             })}
           </div>
 
-          {/* Tab content */}
           <AnimatePresence mode="wait">
             {activeTab === 'workshops' && (
               <motion.div
@@ -329,7 +345,6 @@ export function EducationPage() {
                 role="tabpanel"
                 aria-label="Residency"
               >
-                {/* Application Flow */}
                 <div className="mb-14">
                   <h3 className="font-heading text-2xl font-bold text-primary text-center mb-10">Application Process</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -354,7 +369,6 @@ export function EducationPage() {
                   </div>
                 </div>
 
-                {/* Support Structure */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -377,7 +391,6 @@ export function EducationPage() {
         </div>
       </section>
 
-      {/* ── Material Weeks ────────────────────── */}
       <section className="py-20 lg:py-28 bg-sand/50" aria-label="Material weeks">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading

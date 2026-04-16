@@ -8,6 +8,8 @@ import {
 import { SectionHeading } from '@/components/institution/SectionHeading'
 import { cn } from '@/lib/utils'
 
+const CORPORATE_HERO = 'https://static.prod-images.emergentagent.com/jobs/0abb3382-c7dc-49d3-9a90-e40de9d6fe8b/images/3deb36242c2f122a409076f0c1e3ee9ef54fd591d5af478117fd7d33f55d9e96.jpeg'
+
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
   whileInView: { opacity: 1, y: 0 },
@@ -15,7 +17,6 @@ const fadeUp = {
   transition: { duration: 0.5 },
 }
 
-/* ── Data ──────────────────────────────────────────── */
 const services = [
   {
     icon: Recycle,
@@ -46,9 +47,6 @@ const callForWasteSteps = [
 
 const industries = ['Technology', 'Hospitality', 'Finance', 'Manufacturing', 'Retail', 'Healthcare']
 
-/* ═════════════════════════
-   CORPORATE PAGE
-   ═════════════════════════ */
 export function CorporatePage() {
   const [form, setForm] = useState({
     company: '',
@@ -72,38 +70,43 @@ export function CorporatePage() {
 
   return (
     <main>
-      {/* ── Hero ──────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-primary pt-32 pb-20 lg:pt-40 lg:pb-28" aria-label="Corporate hero">
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `radial-gradient(circle at 30% 70%, var(--color-accent) 0%, transparent 50%),
-                            radial-gradient(circle at 90% 20%, var(--color-gold) 0%, transparent 40%)`
-        }} />
-        <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center">
-          <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="inline-block text-xs font-semibold uppercase tracking-[0.25em] text-accent mb-6">
-            Corporate Solutions
-          </motion.span>
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-            className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-offwhite leading-[1.1] text-balance"
+      <section className="relative min-h-[70vh] flex items-center overflow-hidden bg-primary pt-32 pb-20 lg:pt-40 lg:pb-28" aria-label="Corporate hero">
+        <div className="absolute inset-0 z-0">
+          <img
+            src={CORPORATE_HERO}
+            alt="Corporate art installation"
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="eager"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-transparent" />
+        </div>
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7 }}
+            className="max-w-2xl"
           >
-            Turn Your Waste Into{' '}
-            <span className="text-accent">Cultural Capital</span>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-6 max-w-2xl mx-auto text-lg text-offwhite/70 leading-relaxed"
-          >
-            Partner with ERA to transform your corporate waste streams into certified art, 
-            engage employees through creative sustainability, and amplify your ESG narrative.
-          </motion.p>
+            <span className="inline-block text-xs font-semibold uppercase tracking-[0.25em] text-accent mb-6">
+              Corporate Solutions
+            </span>
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-offwhite leading-[1.1] text-balance mb-6">
+              Turn Your Waste Into{' '}
+              <span className="text-accent">Cultural Capital</span>
+            </h1>
+            <p className="text-lg sm:text-xl text-offwhite/70 leading-relaxed">
+              Partner with ERA to transform your corporate waste streams into certified art, 
+              engage employees through creative sustainability, and amplify your ESG narrative.
+            </p>
+            <div className="mt-10">
+              <a href="#inquiry" className="rounded-full bg-accent px-8 py-3.5 text-base font-semibold text-primary hover:bg-accent/90 transition-all">
+                Partner With Us
+              </a>
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* ── Service Cards ─────────────────────── */}
       <section className="py-20 lg:py-28" aria-label="Services">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading
@@ -143,7 +146,6 @@ export function CorporatePage() {
         </div>
       </section>
 
-      {/* ── Call for Waste ─────────────────────── */}
       <section className="py-20 lg:py-28 bg-sand/50" aria-label="Call for Waste program">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading
@@ -178,8 +180,7 @@ export function CorporatePage() {
         </div>
       </section>
 
-      {/* ── Inquiry Form ──────────────────────── */}
-      <section className="py-20 lg:py-28" aria-label="Corporate inquiry form">
+      <section id="inquiry" className="py-20 lg:py-28" aria-label="Corporate inquiry form">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <SectionHeading
             label="Get Started"
