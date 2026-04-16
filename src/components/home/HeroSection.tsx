@@ -2,6 +2,8 @@ import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowDown, Leaf } from 'lucide-react'
 
+const HERO_IMAGE = 'https://static.prod-images.emergentagent.com/jobs/0abb3382-c7dc-49d3-9a90-e40de9d6fe8b/images/03368d01c8e8339db8de4bf8c79923ab9104cf390a5ea609aa0dd844e3a27bea.jpeg'
+
 export function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({
@@ -20,41 +22,23 @@ export function HeroSection() {
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
       aria-label="Hero"
     >
-      {/* Background */}
+      {/* Background Image with Parallax */}
       <motion.div
         style={{ y: bgY }}
         className="absolute inset-0 z-0"
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-primary via-primary-light/90 to-primary" />
-        <div
-          className="absolute inset-0 opacity-15"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2352B788' fill-opacity='0.3'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
+        <img
+          src={HERO_IMAGE}
+          alt=""
+          className="absolute inset-0 h-[120%] w-full object-cover"
+          loading="eager"
         />
-        {/* Floating particles */}
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute rounded-full bg-accent/20"
-            style={{
-              width: 8 + i * 4,
-              height: 8 + i * 4,
-              left: `${15 + i * 14}%`,
-              top: `${20 + (i % 3) * 25}%`,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{
-              duration: 4 + i,
-              repeat: Infinity,
-              ease: 'easeInOut',
-              delay: i * 0.5,
-            }}
-          />
-        ))}
+        {/* Dark overlay for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/70 via-primary/50 to-primary/80" />
+        {/* Subtle vignette */}
+        <div className="absolute inset-0" style={{
+          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(27,67,50,0.5) 100%)',
+        }} />
       </motion.div>
 
       {/* Content */}
@@ -66,7 +50,7 @@ export function HeroSection() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-sm text-accent"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 backdrop-blur-sm px-4 py-2 text-sm text-accent"
         >
           <Leaf size={14} />
           <span>Redefining Art Through Sustainability</span>
@@ -77,7 +61,7 @@ export function HeroSection() {
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-offwhite leading-[1.05]"
+            className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-offwhite leading-[1.05] drop-shadow-lg"
           >
             From{' '}
             <span className="relative inline-block">
@@ -97,7 +81,7 @@ export function HeroSection() {
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-[1.05]"
+            className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-[1.05] drop-shadow-lg"
           >
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-gold to-amber">
               to Wonder
@@ -109,7 +93,7 @@ export function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 1.0 }}
-          className="mt-8 text-lg sm:text-xl text-offwhite/70 max-w-2xl mx-auto leading-relaxed"
+          className="mt-8 text-lg sm:text-xl text-offwhite/80 max-w-2xl mx-auto leading-relaxed drop-shadow-sm"
         >
           Everything Recycled Arts curates extraordinary works born from discarded materials — 
           proving that beauty thrives where others see only waste.
@@ -129,7 +113,7 @@ export function HeroSection() {
           </a>
           <a
             href="#mission"
-            className="rounded-full border border-offwhite/30 px-8 py-3.5 text-base font-semibold text-offwhite hover:bg-offwhite/10 transition-all"
+            className="rounded-full border border-offwhite/30 backdrop-blur-sm px-8 py-3.5 text-base font-semibold text-offwhite hover:bg-offwhite/10 transition-all"
           >
             Our Mission
           </a>

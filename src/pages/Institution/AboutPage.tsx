@@ -7,6 +7,8 @@ import {
 import { SectionHeading } from '@/components/institution/SectionHeading'
 import { useCountUp } from '@/components/institution/useCountUp'
 
+const OBA_PORTRAIT = 'https://static.prod-images.emergentagent.com/jobs/0abb3382-c7dc-49d3-9a90-e40de9d6fe8b/images/6054d46beea8d7ca23702e1ad9bef0986fba53d1c67199a484fb54b04cea0b57.jpeg'
+
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
   whileInView: { opacity: 1, y: 0 },
@@ -131,15 +133,13 @@ export function AboutPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <motion.div {...fadeUp} className="relative">
-              <div className="aspect-[4/5] rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-sand overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="mx-auto h-32 w-32 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="font-heading text-5xl font-bold text-primary">O</span>
-                    </div>
-                    <p className="mt-4 text-sm text-stone/50">Portrait</p>
-                  </div>
-                </div>
+              <div className="aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl">
+                <img
+                  src={OBA_PORTRAIT}
+                  alt="Oba, Founder & Artistic Director of Everything Recycled Arts"
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
               </div>
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
