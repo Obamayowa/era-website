@@ -1,6 +1,7 @@
 import { createClient } from '@sanity/client'
 import imageUrlBuilder from '@sanity/image-url'
-import type { SanityImageSource } from '@sanity/image-url/lib/types/types'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SanityImageSource = any
 
 export const sanityClient = createClient({
   projectId: import.meta.env.VITE_SANITY_PROJECT_ID || 'REPLACE_WITH_YOUR_PROJECT_ID',
