@@ -102,10 +102,10 @@ describe('Header', () => {
     render(<BrowserRouter><Header /></BrowserRouter>)
     expect(screen.getByText('Home')).toBeInTheDocument()
     expect(screen.getByText('Gallery')).toBeInTheDocument()
-    expect(screen.getByText('Mission')).toBeInTheDocument()
-    expect(screen.getByText('Artworks')).toBeInTheDocument()
-    expect(screen.getByText('Process')).toBeInTheDocument()
-    expect(screen.getByText('Roadmap')).toBeInTheDocument()
+    expect(screen.getByText('Marketplace')).toBeInTheDocument()
+    expect(screen.getByText('Auctions')).toBeInTheDocument()
+    expect(screen.getByText('Institution')).toBeInTheDocument()
+    expect(screen.getByText('Artist Portal')).toBeInTheDocument()
   })
 
   it('renders ERA logo/branding', () => {
@@ -115,7 +115,7 @@ describe('Header', () => {
 
   it('has a CTA button', () => {
     render(<BrowserRouter><Header /></BrowserRouter>)
-    const cta = screen.getAllByText('Explore Art')
+    const cta = screen.getAllByText('Shop Art')
     expect(cta.length).toBeGreaterThan(0)
   })
 
@@ -149,7 +149,7 @@ describe('Footer', () => {
 describe('Newsletter Signup', () => {
   beforeEach(() => {
     useNewsletterStore.setState({ status: 'idle', email: '', subscriberCount: 2847 })
-  }) ||
+  })
 
   it('shows validation error for invalid email', async () => {
     const user = userEvent.setup()
