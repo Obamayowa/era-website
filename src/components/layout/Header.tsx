@@ -1,22 +1,25 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, ShoppingCart } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { useMarketplaceStore } from '@/stores/useMarketplaceStore'
 
 const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Gallery', href: '/gallery' },
-  { label: 'Artist Portal', href: '/artists/dashboard' },
+  { label: 'Marketplace', href: '/marketplace' },
+  { label: 'Auctions', href: '/marketplace/auctions' },
   { label: 'Mission', href: '/#mission' },
-  { label: 'Process', href: '/#process' },
-  { label: 'Roadmap', href: '/#roadmap' },
+  { label: 'Artist Portal', href: '/artists/signup' },
 ]
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
+  const { toggleCart, getCartCount } = useMarketplaceStore()
+  const cartCount = getCartCount()
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 40)
@@ -33,8 +36,8 @@ export function Header() {
     return () => { document.body.style.overflow = '' }
   }, [mobileOpen])
 
-  const isDarkBgPage = ['/gallery', '/artists/dashboard', '/artists/signup'].some(path => location.pathname.startsWith(path))
-  const headerSolid = isScrolled || isDarkBgPage
+  const isInnerPage = location.pathname !== '/'
+  const headerSolid = isScrolled || isInnerPage
 
   return (
     <header
@@ -92,11 +95,33 @@ export function Header() {
                 </a>
               )
             })}
+
+            {/* Cart icon */}
+            <button
+              onClick={toggleCart}
+              className={cn(
+                'relative p-2 rounded-lg transition-colors',
+                headerSolid ? 'text-stone hover:text-primary' : 'text-offwhite/90 hover:text-accent'
+              )}
+              aria-label="Shopping cart"
+            >
+              <ShoppingCart size={18} />
+              {cartCount > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-accent text-primary text-[9px] font-bold rounded-full flex items-center justify-center"
+                >
+                  {cartCount}
+                </motion.span>
+              )}
+            </button>
+
             <Link
-              to="/artists/signup"
+              to="/marketplace"
               className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-primary transition-all hover:bg-accent/80 hover:scale-105"
             >
-              Join as Artist
+              Shop Art
             </Link>
           </nav>
 
@@ -159,11 +184,11 @@ export function Header() {
                 transition={{ delay: navLinks.length * 0.08 }}
               >
                 <Link
-                  to="/artists/signup"
+                  to="/marketplace"
                   className="mt-4 rounded-full bg-accent px-8 py-3 text-lg font-semibold text-primary"
                   onClick={() => setMobileOpen(false)}
                 >
-                  Join as Artist
+                  Shop Art
                 </Link>
               </motion.div>
             </nav>
