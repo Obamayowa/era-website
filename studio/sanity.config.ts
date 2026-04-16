@@ -7,7 +7,7 @@ export default defineConfig({
   name: 'era-studio',
   title: 'ERA — Everything Recycled Arts',
 
-  projectId: process.env.SANITY_STUDIO_PROJECT_ID!,
+  projectId: process.env.SANITY_STUDIO_PROJECT_ID || 'foi8z958',
   dataset: process.env.SANITY_STUDIO_DATASET || 'production',
 
   plugins: [
