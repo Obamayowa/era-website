@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils'
 const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Gallery', href: '/gallery' },
+  { label: 'Artist Portal', href: '/artists/dashboard' },
   { label: 'Mission', href: '/#mission' },
-  { label: 'Artworks', href: '/#artworks' },
   { label: 'Process', href: '/#process' },
   { label: 'Roadmap', href: '/#roadmap' },
 ]
@@ -33,8 +33,8 @@ export function Header() {
     return () => { document.body.style.overflow = '' }
   }, [mobileOpen])
 
-  const isGallery = location.pathname === '/gallery'
-  const headerSolid = isScrolled || isGallery
+  const isDarkBgPage = ['/gallery', '/artists/dashboard', '/artists/signup'].some(path => location.pathname.startsWith(path))
+  const headerSolid = isScrolled || isDarkBgPage
 
   return (
     <header
@@ -93,10 +93,10 @@ export function Header() {
               )
             })}
             <Link
-              to="/gallery"
+              to="/artists/signup"
               className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-primary transition-all hover:bg-accent/80 hover:scale-105"
             >
-              Explore Art
+              Join as Artist
             </Link>
           </nav>
 
@@ -159,11 +159,11 @@ export function Header() {
                 transition={{ delay: navLinks.length * 0.08 }}
               >
                 <Link
-                  to="/gallery"
+                  to="/artists/signup"
                   className="mt-4 rounded-full bg-accent px-8 py-3 text-lg font-semibold text-primary"
                   onClick={() => setMobileOpen(false)}
                 >
-                  Explore Art
+                  Join as Artist
                 </Link>
               </motion.div>
             </nav>
