@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "sanity dev",
-    "build": "sanity build",
+    "build": "npm install --legacy-peer-deps && sanity build",
     "deploy": "sanity deploy"
   },
   "dependencies": {
