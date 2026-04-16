@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, ShoppingCart } from 'lucide-react'
+import { Menu, X, ShoppingCart, ChevronDown } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useMarketplaceStore } from '@/stores/useMarketplaceStore'
@@ -10,13 +10,50 @@ const navLinks = [
   { label: 'Gallery', href: '/gallery' },
   { label: 'Marketplace', href: '/marketplace' },
   { label: 'Auctions', href: '/marketplace/auctions' },
-  { label: 'Mission', href: '/#mission' },
+  {
+    label: 'Institution',
+    href: '#',
+    children: [
+      { label: 'About', href: '/about' },
+      { label: 'Education', href: '/education' },
+      { label: 'Corporate', href: '/corporate' },
+    ],
+  },
   { label: 'Artist Portal', href: '/artists/signup' },
 ]
+
+function DropdownMenu({ items, headerSolid, onNavigate }: {
+  items: { label: string; href: string }[]
+  headerSolid: boolean
+  onNavigate?: () => void
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      transition={{ duration: 0.15 }}
+      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-44 rounded-xl bg-offwhite shadow-lg border border-stone/10 py-2 z-50"
+    >
+      {items.map((item) => (
+        <Link
+          key={item.label}
+          to={item.href}
+          onClick={onNavigate}
+          className="block px-4 py-2 text-sm text-stone/80 hover:text-primary hover:bg-primary/5 transition-colors"
+        >
+          {item.label}
+        </Link>
+      ))}
+    </motion.div>
+  )
+}
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const location = useLocation()
   const { toggleCart, getCartCount } = useMarketplaceStore()
   const cartCount = getCartCount()
@@ -36,8 +73,25 @@ export function Header() {
     return () => { document.body.style.overflow = '' }
   }, [mobileOpen])
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    setDropdownOpen(false)
+    setMobileOpen(false)
+  }, [location.pathname])
+
   const isInnerPage = location.pathname !== '/'
   const headerSolid = isScrolled || isInnerPage
+  const institutionPaths = ['/about', '/education', '/corporate']
+  const isInstitutionActive = institutionPaths.includes(location.pathname)
 
   return (
     <header
@@ -66,6 +120,31 @@ export function Header() {
 
           <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
             {navLinks.map((link) => {
+              if (link.children) {
+                return (
+                  <div key={link.label} ref={dropdownRef} className="relative">
+                    <button
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      className={cn(
+                        'flex items-center gap-1 text-sm font-medium transition-colors hover:text-accent',
+                        headerSolid ? 'text-stone' : 'text-offwhite/90',
+                        isInstitutionActive && 'text-accent'
+                      )}
+                      aria-expanded={dropdownOpen}
+                      aria-haspopup="true"
+                    >
+                      {link.label}
+                      <ChevronDown size={14} className={cn('transition-transform', dropdownOpen && 'rotate-180')} />
+                    </button>
+                    <AnimatePresence>
+                      {dropdownOpen && (
+                        <DropdownMenu items={link.children} headerSolid={headerSolid} />
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )
+              }
+
               const isRoute = link.href.startsWith('/') && !link.href.includes('#')
               if (isRoute) {
                 return (
@@ -150,6 +229,29 @@ export function Header() {
           >
             <nav className="flex flex-col items-center justify-center gap-8 pt-20" aria-label="Mobile navigation">
               {navLinks.map((link, i) => {
+                if (link.children) {
+                  return (
+                    <motion.div
+                      key={link.label}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.08 }}
+                      className="flex flex-col items-center gap-3"
+                    >
+                      <span className="text-lg font-heading text-offwhite/50 uppercase tracking-wider text-xs">{link.label}</span>
+                      {link.children.map((child) => (
+                        <Link
+                          key={child.label}
+                          to={child.href}
+                          className="text-xl font-heading text-offwhite hover:text-accent transition-colors"
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </motion.div>
+                  )
+                }
                 const isRoute = link.href.startsWith('/') && !link.href.includes('#')
                 return (
                   <motion.div

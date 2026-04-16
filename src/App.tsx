@@ -6,6 +6,7 @@ import { HomePage } from '@/pages/HomePage'
 import { GalleryPage } from '@/pages/GalleryPage'
 import { ArtistSignup, ArtistDashboard } from '@/pages/ArtistPortal'
 import { MarketplacePage, AuctionsPage, CommissionsPage } from '@/pages/Marketplace'
+import { AboutPage, EducationPage, CorporatePage } from '@/pages/Institution'
 
 function App() {
   return (
@@ -21,6 +22,9 @@ function App() {
           <Route path="/marketplace" element={<MarketplacePage />} />
           <Route path="/marketplace/auctions" element={<AuctionsPage />} />
           <Route path="/marketplace/commissions" element={<CommissionsPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/education" element={<EducationPage />} />
+          <Route path="/corporate" element={<CorporatePage />} />
         </Routes>
         <Footer />
       </div>
