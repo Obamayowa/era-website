@@ -20,6 +20,7 @@ export interface GalleryArtwork {
   price: number
   description: string
   gradient: string
+  image?: string
   span: 'normal' | 'tall' | 'wide'
   year: number
 }
