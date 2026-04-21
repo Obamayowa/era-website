@@ -12,7 +12,21 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
-export function NewsletterSignup() {
+interface NewsletterData {
+  newsletterBadge?: string
+  newsletterHeadline?: string
+  newsletterSubtext?: string
+  newsletterButtonLabel?: string
+  newsletterSuccessHeadline?: string
+  newsletterSuccessText?: string
+  newsletterSubscriberLabel?: string
+}
+
+interface Props {
+  data?: NewsletterData | null
+}
+
+export function NewsletterSignup({ data }: Props) {
   const { status, subscriberCount, subscribe, reset } = useNewsletterStore()
   const { ref, opacity, y } = useScrollReveal()
 
@@ -25,10 +39,18 @@ export function NewsletterSignup() {
     resolver: zodResolver(schema),
   })
 
-  const onSubmit = async (data: FormData) => {
-    await subscribe(data.email)
+  const onSubmit = async (formData: FormData) => {
+    await subscribe(formData.email)
     resetForm()
   }
+
+  const badge = data?.newsletterBadge || 'Stay Connected'
+  const headline = data?.newsletterHeadline || 'Join the Movement'
+  const subtext = data?.newsletterSubtext || 'Get early access to new artworks, artist stories, and behind-the-scenes of the recycled art revolution.'
+  const buttonLabel = data?.newsletterButtonLabel || 'Join ERA'
+  const successHeadline = data?.newsletterSuccessHeadline || 'Welcome to ERA!'
+  const successText = data?.newsletterSuccessText || "You're now part of a community transforming waste into wonder."
+  const subscriberLabel = data?.newsletterSubscriberLabel || 'art lovers already joined'
 
   return (
     <section
@@ -46,17 +68,16 @@ export function NewsletterSignup() {
           className="text-center"
         >
           <span className="inline-block text-sm font-semibold uppercase tracking-widest text-accent mb-3">
-            Stay Connected
+            {badge}
           </span>
           <h2
             id="newsletter-heading"
             className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-primary mb-4 text-balance"
           >
-            Join the Movement
+            {headline}
           </h2>
           <p className="text-lg text-stone/60 max-w-xl mx-auto mb-10">
-            Get early access to new artworks, artist stories, and behind-the-scenes
-            of the recycled art revolution.
+            {subtext}
           </p>
         </motion.div>
 
@@ -76,10 +97,10 @@ export function NewsletterSignup() {
                 <CheckCircle size={32} />
               </div>
               <h3 className="font-heading text-2xl font-bold text-primary mb-2">
-                Welcome to ERA!
+                {successHeadline}
               </h3>
               <p className="text-stone/60 mb-6">
-                You're now part of a community transforming waste into wonder.
+                {successText}
               </p>
               <button
                 onClick={reset}
@@ -127,7 +148,7 @@ export function NewsletterSignup() {
                 ) : (
                   <>
                     <Send size={16} />
-                    Join ERA
+                    {buttonLabel}
                   </>
                 )}
               </button>
@@ -146,8 +167,7 @@ export function NewsletterSignup() {
           <div className="flex items-center gap-2">
             <Users size={16} className="text-accent" />
             <span>
-              <strong className="text-stone/80">{subscriberCount.toLocaleString()}</strong> art
-              lovers already joined
+              <strong className="text-stone/80">{subscriberCount.toLocaleString()}</strong> {subscriberLabel}
             </span>
           </div>
           <div className="hidden sm:block w-1 h-1 rounded-full bg-stone/20" />

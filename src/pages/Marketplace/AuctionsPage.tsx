@@ -2,9 +2,47 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, TrendingUp, X, Gavel, Users, Award, Shield } from 'lucide-react'
 import { useMarketplaceStore } from '@/stores/useMarketplaceStore'
-import { auctionListings, AUCTION_CATEGORIES } from '@/data/marketplaceData'
+import { auctionListings as FALLBACK_AUCTIONS, AUCTION_CATEGORIES } from '@/data/marketplaceData'
 import type { AuctionListing, AuctionCategory } from '@/data/marketplaceData'
+import { sanityClient } from '@/lib/sanity'
 import { cn } from '@/lib/utils'
+
+const SANITY_AUCTIONS_QUERY = `*[_type == "auctionListing" && isLive == true] | order(isFeatured desc, _createdAt desc) {
+  _id, title, artist, material, description, dimensions,
+  startingBid, currentBid, reservePrice, totalBids,
+  certificationLevel, endTime, isFeatured,
+  "imageUrl": image.asset->url
+}`
+
+const GRADIENTS = [
+  'from-blue-700 to-teal-500',
+  'from-amber-700 to-orange-500',
+  'from-violet-700 to-purple-500',
+  'from-rose-700 to-pink-500',
+  'from-emerald-700 to-lime-500',
+  'from-cyan-700 to-sky-500',
+]
+
+function mapSanityToAuction(a: any, i: number): AuctionListing {
+  return {
+    id: a._id,
+    title: a.title || 'Untitled',
+    artist: a.artist || 'Unknown Artist',
+    gradient: GRADIENTS[i % GRADIENTS.length],
+    material: a.material || 'Mixed Media',
+    category: 'Quarterly Themed' as AuctionCategory,
+    certification: a.certificationLevel === 'GOLD' ? 'Level 3' : 'Level 2',
+    startingBid: a.startingBid || 1000,
+    currentBid: a.currentBid || a.startingBid || 1000,
+    reservePrice: a.reservePrice || (a.startingBid || 1000) * 1.5,
+    estimatedValue: (a.reservePrice || (a.startingBid || 1000) * 1.5) * 1.2,
+    bidCount: a.totalBids || 0,
+    endsAt: a.endTime ? new Date(a.endTime) : new Date(Date.now() + 72 * 3600 * 1000),
+    description: a.description || '',
+    imageUrl: a.imageUrl,
+    bidHistory: [],
+  } as any
+}
 
 function useCountdown(endsAt: Date) {
   const [timeLeft, setTimeLeft] = useState('')
@@ -26,7 +64,7 @@ function useCountdown(endsAt: Date) {
   return { timeLeft, urgent }
 }
 
-function AuctionCard({ auction, onBid }: { auction: AuctionListing; onBid: (id: string) => void }) {
+function AuctionCard({ auction, onBid }: { auction: AuctionListing & { imageUrl?: string }; onBid: (id: string) => void }) {
   const { timeLeft, urgent } = useCountdown(auction.endsAt)
   const pct = Math.min(100, Math.round((auction.currentBid / auction.reservePrice) * 100))
   const reserveMet = auction.currentBid >= auction.reservePrice
@@ -37,8 +75,15 @@ function AuctionCard({ auction, onBid }: { auction: AuctionListing; onBid: (id: 
       viewport={{ once: true }} transition={{ duration: 0.4 }}
       className="rounded-2xl bg-offwhite border border-stone/10 overflow-hidden hover:shadow-xl hover:border-accent/20 transition-all duration-300 group"
     >
-      {/* Gradient image */}
-      <div className={`relative aspect-[4/3] bg-gradient-to-br ${auction.gradient}`}>
+      {/* Image or gradient */}
+      <div className={`relative aspect-[4/3] ${(auction as any).imageUrl ? '' : `bg-gradient-to-br ${auction.gradient}`}`}>
+        {(auction as any).imageUrl ? (
+          <img
+            src={(auction as any).imageUrl}
+            alt={auction.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-primary/20" />
         <div className="absolute top-3 left-3">
           <span className="text-[10px] font-bold uppercase tracking-wider bg-offwhite/90 text-primary px-2.5 py-1 rounded-full">
@@ -61,7 +106,9 @@ function AuctionCard({ auction, onBid }: { auction: AuctionListing; onBid: (id: 
         <div className="text-[10px] font-semibold uppercase tracking-[0.15em] text-accent mb-1">{auction.material}</div>
         <h3 className="font-heading text-xl font-bold text-primary leading-tight">{auction.title}</h3>
         <p className="text-sm text-stone/60 mt-0.5">{auction.artist}</p>
-        <p className="text-sm text-stone/60 mt-3 leading-relaxed line-clamp-2">{auction.description}</p>
+        {auction.description && (
+          <p className="text-sm text-stone/60 mt-3 leading-relaxed line-clamp-2">{auction.description}</p>
+        )}
 
         {/* Bid progress */}
         <div className="mt-5">
@@ -105,8 +152,8 @@ function AuctionCard({ auction, onBid }: { auction: AuctionListing; onBid: (id: 
   )
 }
 
-function BidModal({ auctionId, onClose }: { auctionId: string; onClose: () => void }) {
-  const auction = auctionListings.find(a => a.id === auctionId)
+function BidModal({ auctionId, auctions, onClose }: { auctionId: string; auctions: AuctionListing[]; onClose: () => void }) {
+  const auction = auctions.find(a => a.id === auctionId)
   const [bidAmount, setBidAmount] = useState('')
   const [submitted, setSubmitted] = useState(false)
   if (!auction) return null
@@ -148,15 +195,19 @@ function BidModal({ auctionId, onClose }: { auctionId: string; onClose: () => vo
                 <div><p className="text-stone/40 text-xs">Current Bid</p><p className="font-bold text-primary">€{auction.currentBid.toLocaleString()}</p></div>
                 <div><p className="text-stone/40 text-xs">Minimum Bid</p><p className="font-bold text-accent">€{minBid.toLocaleString()}</p></div>
               </div>
-              <h5 className="text-xs font-semibold uppercase tracking-wider text-stone/50 mb-3">Recent Bids</h5>
-              <div className="space-y-2 mb-5 max-h-32 overflow-y-auto">
-                {auction.bidHistory.slice(0, 4).map((b, i) => (
-                  <div key={i} className="flex justify-between text-sm">
-                    <span className="text-stone/60">{b.bidder}</span>
-                    <span className="font-medium text-primary">€{b.amount.toLocaleString()}</span>
+              {auction.bidHistory?.length > 0 && (
+                <>
+                  <h5 className="text-xs font-semibold uppercase tracking-wider text-stone/50 mb-3">Recent Bids</h5>
+                  <div className="space-y-2 mb-5 max-h-32 overflow-y-auto">
+                    {auction.bidHistory.slice(0, 4).map((b, i) => (
+                      <div key={i} className="flex justify-between text-sm">
+                        <span className="text-stone/60">{b.bidder}</span>
+                        <span className="font-medium text-primary">€{b.amount.toLocaleString()}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              )}
               <form onSubmit={handleSubmit}>
                 <label className="block text-sm font-semibold text-stone mb-1.5">Your Bid (€)</label>
                 <input
@@ -180,8 +231,24 @@ function BidModal({ auctionId, onClose }: { auctionId: string; onClose: () => vo
 
 export function AuctionsPage() {
   const { auctionCategoryFilter, setAuctionCategoryFilter, openBidModal, closeBidModal, bidModalAuctionId } = useMarketplaceStore()
+  const [auctions, setAuctions] = useState<AuctionListing[]>(FALLBACK_AUCTIONS)
+  const [loaded, setLoaded] = useState(false)
 
-  const filtered = auctionCategoryFilter === 'All' ? auctionListings : auctionListings.filter(a => a.category === auctionCategoryFilter)
+  useEffect(() => {
+    if (loaded) return
+    sanityClient.fetch(SANITY_AUCTIONS_QUERY)
+      .then((results: any[]) => {
+        if (results && results.length > 0) {
+          setAuctions(results.map(mapSanityToAuction))
+        }
+      })
+      .catch(err => console.warn('[Auctions] Sanity fetch failed:', err))
+      .finally(() => setLoaded(true))
+  }, [loaded])
+
+  const filtered = auctionCategoryFilter === 'All'
+    ? auctions
+    : auctions.filter(a => a.category === auctionCategoryFilter)
 
   return (
     <main className="min-h-screen bg-offwhite">
@@ -211,8 +278,8 @@ export function AuctionsPage() {
       {/* Live stats */}
       <div className="bg-primary/95 border-t border-offwhite/5">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-8 text-sm text-offwhite/50 overflow-x-auto">
-          <div className="flex items-center gap-2 shrink-0"><span className="w-2 h-2 bg-accent rounded-full animate-pulse" /><span className="text-offwhite font-medium">{auctionListings.length} Live Auctions</span></div>
-          {auctionListings.map(a => (
+          <div className="flex items-center gap-2 shrink-0"><span className="w-2 h-2 bg-accent rounded-full animate-pulse" /><span className="text-offwhite font-medium">{auctions.length} Live Auctions</span></div>
+          {auctions.slice(0, 5).map(a => (
             <div key={a.id} className="flex items-center gap-2 shrink-0"><TrendingUp size={12} className="text-accent" /><span>{a.title.split('—')[0].trim()}: <strong className="text-offwhite">€{a.currentBid.toLocaleString()}</strong></span></div>
           ))}
         </div>
@@ -223,14 +290,14 @@ export function AuctionsPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
             {filtered.map(auction => (
-              <AuctionCard key={auction.id} auction={auction} onBid={openBidModal} />
+              <AuctionCard key={auction.id} auction={auction as any} onBid={openBidModal} />
             ))}
           </div>
         </div>
       </section>
 
       <AnimatePresence>
-        {bidModalAuctionId && <BidModal auctionId={bidModalAuctionId} onClose={closeBidModal} />}
+        {bidModalAuctionId && <BidModal auctionId={bidModalAuctionId} auctions={auctions} onClose={closeBidModal} />}
       </AnimatePresence>
     </main>
   )

@@ -1,13 +1,12 @@
 import { motion } from 'framer-motion'
-import { Rocket, Store, Building2, Check, Clock, Sparkles } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useScrollReveal } from '@/hooks/useScrollAnimation'
 
-const phases = [
+const FALLBACK_PHASES = [
   {
     phase: 1,
     title: 'Foundation',
     subtitle: '2024–2025',
-    icon: Rocket,
     status: 'active' as const,
     items: [
       'Launch curated artist network',
@@ -20,7 +19,6 @@ const phases = [
     phase: 2,
     title: 'Marketplace',
     subtitle: '2025–2026',
-    icon: Store,
     status: 'upcoming' as const,
     items: [
       'Open ERA online marketplace',
@@ -33,7 +31,6 @@ const phases = [
     phase: 3,
     title: 'Cultural Institution',
     subtitle: '2027+',
-    icon: Building2,
     status: 'future' as const,
     items: [
       'Open physical ERA gallery spaces',
@@ -44,32 +41,64 @@ const phases = [
   },
 ]
 
-const statusConfig = {
+type PhaseStatus = 'active' | 'upcoming' | 'future'
+
+const statusConfig: Record<PhaseStatus, {
+  badge: string
+  badgeColor: string
+  borderColor: string
+}> = {
   active: {
     badge: 'In Progress',
     badgeColor: 'bg-accent text-primary',
     borderColor: 'border-accent/30',
-    iconBg: 'bg-accent',
-    dotIcon: Sparkles,
   },
   upcoming: {
     badge: 'Next Phase',
     badgeColor: 'bg-gold/20 text-gold',
     borderColor: 'border-gold/20',
-    iconBg: 'bg-gold',
-    dotIcon: Clock,
   },
   future: {
     badge: 'Vision',
     badgeColor: 'bg-primary-light/20 text-offwhite/60',
     borderColor: 'border-offwhite/10',
-    iconBg: 'bg-primary-light',
-    dotIcon: Clock,
   },
 }
 
-export function RoadmapTeaser() {
+interface SanityPhase {
+  title?: string
+  subtitle?: string
+  status?: string
+  items?: string[]
+}
+
+interface RoadmapData {
+  roadmapBadge?: string
+  roadmapHeadline?: string
+  roadmapSubtext?: string
+  roadmapPhases?: SanityPhase[]
+}
+
+interface Props {
+  data?: RoadmapData | null
+}
+
+export function RoadmapTeaser({ data }: Props) {
   const { ref, opacity, y } = useScrollReveal()
+
+  const badge = data?.roadmapBadge || 'Roadmap'
+  const headline = data?.roadmapHeadline || 'Building the Future of Recycled Art'
+  const subtext = data?.roadmapSubtext || 'Our journey from grassroots movement to global cultural institution.'
+
+  const phases = (data?.roadmapPhases && data.roadmapPhases.length > 0)
+    ? data.roadmapPhases.map((p, i) => ({
+        phase: i + 1,
+        title: p.title || `Phase ${i + 1}`,
+        subtitle: p.subtitle || '',
+        status: (p.status as PhaseStatus) || 'future',
+        items: p.items || [],
+      }))
+    : FALLBACK_PHASES
 
   return (
     <section id="roadmap" className="py-20 lg:py-28 bg-sand" aria-labelledby="roadmap-heading">
@@ -80,13 +109,13 @@ export function RoadmapTeaser() {
           className="text-center mb-16"
         >
           <span className="inline-block text-sm font-semibold uppercase tracking-widest text-accent mb-3">
-            Roadmap
+            {badge}
           </span>
           <h2 id="roadmap-heading" className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-primary text-balance">
-            Building the Future of Recycled Art
+            {headline}
           </h2>
           <p className="mt-4 text-lg text-stone/60 max-w-2xl mx-auto">
-            Our journey from grassroots movement to global cultural institution.
+            {subtext}
           </p>
         </motion.div>
 
@@ -107,8 +136,10 @@ export function RoadmapTeaser() {
                 } p-6 sm:p-8 transition-all hover:shadow-lg`}
               >
                 <div className="flex items-center justify-between mb-6">
-                  <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${config.iconBg} text-offwhite`}>
-                    <phase.icon size={22} />
+                  <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl text-xl ${
+                    phase.status === 'active' ? 'bg-accent' : phase.status === 'upcoming' ? 'bg-gold' : 'bg-primary-light'
+                  } text-offwhite`}>
+                    {phase.phase}
                   </div>
                   <span className={`text-xs font-semibold uppercase tracking-wider rounded-full px-3 py-1 ${config.badgeColor}`}>
                     {config.badge}

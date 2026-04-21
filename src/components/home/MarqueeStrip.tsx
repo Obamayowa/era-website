@@ -1,22 +1,29 @@
 import { motion } from 'framer-motion'
 import { Recycle, Palette, Gem, Leaf, Sparkles } from 'lucide-react'
 
-const marqueeItems = [
-  { text: 'Reclaimed Wood', icon: Recycle },
-  { text: 'Ocean Plastics', icon: Sparkles },
-  { text: 'Vintage Metals', icon: Gem },
-  { text: 'Maria Santos', icon: Palette },
-  { text: 'Textile Remnants', icon: Leaf },
-  { text: 'Discarded Glass', icon: Recycle },
-  { text: 'James Okafor', icon: Palette },
-  { text: 'Industrial Scrap', icon: Sparkles },
-  { text: 'Paper & Cardboard', icon: Leaf },
-  { text: 'Yuki Tanaka', icon: Palette },
-  { text: 'E-Waste Components', icon: Gem },
-  { text: 'Elena Voss', icon: Palette },
+const FALLBACK_ITEMS = [
+  'Reclaimed Wood',
+  'Ocean Plastics',
+  'Vintage Metals',
+  'Maria Santos',
+  'Textile Remnants',
+  'Discarded Glass',
+  'James Okafor',
+  'Industrial Scrap',
+  'Paper & Cardboard',
+  'Yuki Tanaka',
+  'E-Waste Components',
+  'Elena Voss',
 ]
 
-function MarqueeRow({ direction = 1 }: { direction?: number }) {
+const ICONS = [Recycle, Sparkles, Gem, Palette, Leaf, Recycle, Palette, Sparkles, Leaf, Palette, Gem, Palette]
+
+interface Props {
+  items?: string[] | null
+}
+
+function MarqueeRow({ direction = 1, displayItems }: { direction?: number; displayItems: string[] }) {
+  const tripled = [...displayItems, ...displayItems, ...displayItems]
   return (
     <div className="flex overflow-hidden">
       <motion.div
@@ -24,26 +31,31 @@ function MarqueeRow({ direction = 1 }: { direction?: number }) {
         animate={{ x: direction > 0 ? [0, -2400] : [-2400, 0] }}
         transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
       >
-        {[...marqueeItems, ...marqueeItems, ...marqueeItems].map((item, i) => (
-          <div
-            key={i}
-            className="flex shrink-0 items-center gap-2 rounded-full border border-primary/10 bg-offwhite px-5 py-2 text-sm font-medium text-stone whitespace-nowrap"
-          >
-            <item.icon size={14} className="text-accent" />
-            {item.text}
-          </div>
-        ))}
+        {tripled.map((text, i) => {
+          const Icon = ICONS[i % ICONS.length]
+          return (
+            <div
+              key={i}
+              className="flex shrink-0 items-center gap-2 rounded-full border border-primary/10 bg-offwhite px-5 py-2 text-sm font-medium text-stone whitespace-nowrap"
+            >
+              <Icon size={14} className="text-accent" />
+              {text}
+            </div>
+          )
+        })}
       </motion.div>
     </div>
   )
 }
 
-export function MarqueeStrip() {
+export function MarqueeStrip({ items }: Props) {
+  const displayItems = (items && items.length > 0) ? items : FALLBACK_ITEMS
+
   return (
     <section className="relative py-8 bg-sand overflow-hidden border-y border-primary/5" aria-label="Material categories and artists">
       <div className="space-y-3">
-        <MarqueeRow direction={1} />
-        <MarqueeRow direction={-1} />
+        <MarqueeRow direction={1} displayItems={displayItems} />
+        <MarqueeRow direction={-1} displayItems={displayItems} />
       </div>
     </section>
   )

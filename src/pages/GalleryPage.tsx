@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { FilterBar } from '@/components/gallery/FilterBar'
 import { ArtworkGrid } from '@/components/gallery/ArtworkGrid'
@@ -5,7 +6,12 @@ import { ArtworkModal } from '@/components/gallery/ArtworkModal'
 import { useGalleryStore } from '@/stores/useGalleryStore'
 
 export function GalleryPage() {
-  const { filteredArtworks, artworks } = useGalleryStore()
+  const { filteredArtworks, artworks, loadSanityArtworks } = useGalleryStore()
+
+  // Load artworks from Sanity on first visit
+  useEffect(() => {
+    loadSanityArtworks()
+  }, [loadSanityArtworks])
 
   return (
     <main className="min-h-screen bg-offwhite">

@@ -2,9 +2,26 @@ import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowDown, Leaf } from 'lucide-react'
 
-const HERO_IMAGE = 'https://static.prod-images.emergentagent.com/jobs/0abb3382-c7dc-49d3-9a90-e40de9d6fe8b/images/03368d01c8e8339db8de4bf8c79923ab9104cf390a5ea609aa0dd844e3a27bea.jpeg'
+const FALLBACK_IMAGE = 'https://static.prod-images.emergentagent.com/jobs/0abb3382-c7dc-49d3-9a90-e40de9d6fe8b/images/03368d01c8e8339db8de4bf8c79923ab9104cf390a5ea609aa0dd844e3a27bea.jpeg'
 
-export function HeroSection() {
+interface HeroData {
+  heroLine1?: string
+  heroHighlightWord?: string
+  heroLine2?: string
+  heroBadgeText?: string
+  heroSubtext?: string
+  heroCTA1Label?: string
+  heroCTA1Href?: string
+  heroCTA2Label?: string
+  heroCTA2Href?: string
+  heroImageUrl?: string
+}
+
+interface Props {
+  data?: HeroData | null
+}
+
+export function HeroSection({ data }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -15,6 +32,17 @@ export function HeroSection() {
   const textY = useTransform(scrollYProgress, [0, 1], ['0%', '50%'])
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95])
+
+  const heroImage = data?.heroImageUrl || FALLBACK_IMAGE
+  const line1 = data?.heroLine1 || 'From'
+  const highlightWord = data?.heroHighlightWord || 'Waste'
+  const line2 = data?.heroLine2 || 'to Wonder'
+  const badgeText = data?.heroBadgeText || 'Redefining Art Through Sustainability'
+  const subtext = data?.heroSubtext || 'Everything Recycled Arts curates extraordinary works born from discarded materials — proving that beauty thrives where others see only waste.'
+  const cta1Label = data?.heroCTA1Label || 'Explore Artworks'
+  const cta1Href = data?.heroCTA1Href || '#artworks'
+  const cta2Label = data?.heroCTA2Label || 'Our Mission'
+  const cta2Href = data?.heroCTA2Href || '#mission'
 
   return (
     <section
@@ -28,7 +56,7 @@ export function HeroSection() {
         className="absolute inset-0 z-0"
       >
         <img
-          src={HERO_IMAGE}
+          src={heroImage}
           alt=""
           className="absolute inset-0 h-[120%] w-full object-cover"
           loading="eager"
@@ -53,7 +81,7 @@ export function HeroSection() {
           className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 backdrop-blur-sm px-4 py-2 text-sm text-accent"
         >
           <Leaf size={14} />
-          <span>Redefining Art Through Sustainability</span>
+          <span>{badgeText}</span>
         </motion.div>
 
         <div className="overflow-hidden">
@@ -63,9 +91,9 @@ export function HeroSection() {
             transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-offwhite leading-[1.05] drop-shadow-lg"
           >
-            From{' '}
+            {line1}{' '}
             <span className="relative inline-block">
-              <span className="relative z-10">Waste</span>
+              <span className="relative z-10">{highlightWord}</span>
               <motion.span
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
@@ -84,7 +112,7 @@ export function HeroSection() {
             className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-[1.05] drop-shadow-lg"
           >
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-gold to-amber">
-              to Wonder
+              {line2}
             </span>
           </motion.h1>
         </div>
@@ -95,8 +123,7 @@ export function HeroSection() {
           transition={{ duration: 0.6, delay: 1.0 }}
           className="mt-8 text-lg sm:text-xl text-offwhite/80 max-w-2xl mx-auto leading-relaxed drop-shadow-sm"
         >
-          Everything Recycled Arts curates extraordinary works born from discarded materials — 
-          proving that beauty thrives where others see only waste.
+          {subtext}
         </motion.p>
 
         <motion.div
@@ -106,16 +133,16 @@ export function HeroSection() {
           className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <a
-            href="#artworks"
+            href={cta1Href}
             className="rounded-full bg-accent px-8 py-3.5 text-base font-semibold text-primary hover:bg-accent/90 transition-all hover:scale-105 hover:shadow-lg hover:shadow-accent/20"
           >
-            Explore Artworks
+            {cta1Label}
           </a>
           <a
-            href="#mission"
+            href={cta2Href}
             className="rounded-full border border-offwhite/30 backdrop-blur-sm px-8 py-3.5 text-base font-semibold text-offwhite hover:bg-offwhite/10 transition-all"
           >
-            Our Mission
+            {cta2Label}
           </a>
         </motion.div>
       </motion.div>
