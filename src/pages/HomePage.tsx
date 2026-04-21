@@ -28,9 +28,28 @@ const FEATURED_ARTWORKS_QUERY = `*[_type == "homePage"][0] {
   }
 }`
 
+interface HomeSections {
+  heroLine1?: string; heroHighlightWord?: string; heroLine2?: string; heroBadgeText?: string; heroSubtext?: string
+  heroCTA1Label?: string; heroCTA1Href?: string; heroCTA2Label?: string; heroCTA2Href?: string; heroImageUrl?: string
+  marqueeItems?: string[]
+  missionBadge?: string; missionHeadline?: string; missionSubtext?: string
+  missionPillars?: { icon?: string; title?: string; description?: string }[]
+  processBadge?: string; processHeadline?: string; processSubtext?: string
+  processSteps?: { icon?: string; title?: string; description?: string }[]
+  featuredBadge?: string; featuredHeadline?: string; featuredSubtext?: string; featuredCTALabel?: string; featuredCTAHref?: string
+  roadmapBadge?: string; roadmapHeadline?: string; roadmapSubtext?: string
+  roadmapPhases?: { phase?: string; title?: string; status?: string; items?: string[] }[]
+  newsletterBadge?: string; newsletterHeadline?: string; newsletterSubtext?: string; newsletterButtonLabel?: string
+  newsletterSuccessHeadline?: string; newsletterSuccessText?: string; newsletterSubscriberLabel?: string
+}
+
+interface HomeData {
+  featuredArtworks?: { _id: string; title?: string; price?: number; material?: string; artist?: { name?: string }; imageUrl?: string; slug?: { current?: string } }[]
+}
+
 export function HomePage() {
-  const { data: sections } = useSanity(HOME_SECTIONS_QUERY, null)
-  const { data: homeData } = useSanity(FEATURED_ARTWORKS_QUERY, null)
+  const { data: sections } = useSanity<HomeSections | null>(HOME_SECTIONS_QUERY, null)
+  const { data: homeData } = useSanity<HomeData | null>(FEATURED_ARTWORKS_QUERY, null)
 
   return (
     <main>

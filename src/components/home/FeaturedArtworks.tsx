@@ -105,7 +105,7 @@ export function FeaturedArtworks({ artworks, data }: Props) {
         id: a._id,
         title: a.title || '',
         material: a.material || '',
-        artist: a.artist,
+        artist: { name: a.artist?.name || 'Unknown Artist' },
         imageUrl: a.imageUrl,
         gradient: GRADIENTS[i % GRADIENTS.length],
         span: (i === 0 || i === 5 ? 'tall' : 'normal') as 'tall' | 'normal',
