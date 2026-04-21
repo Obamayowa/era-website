@@ -4,27 +4,45 @@ import { Menu, X, ShoppingCart, ChevronDown } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useMarketplaceStore } from '@/stores/useMarketplaceStore'
+import { useSanity } from '@/hooks/useSanity'
 
-const navLinks = [
-  { label: 'Home', href: '/' },
-  { label: 'Gallery', href: '/gallery' },
-  { label: 'Marketplace', href: '/marketplace' },
-  { label: 'Auctions', href: '/marketplace/auctions' },
+const FALLBACK_NAV = [
+  { label: 'Home', href: '/', isDropdown: false, dropdownItems: [] },
+  { label: 'Gallery', href: '/gallery', isDropdown: false, dropdownItems: [] },
+  { label: 'Marketplace', href: '/marketplace', isDropdown: false, dropdownItems: [] },
+  { label: 'Auctions', href: '/marketplace/auctions', isDropdown: false, dropdownItems: [] },
   {
-    label: 'Institution',
-    href: '#',
-    children: [
+    label: 'Institution', href: '#', isDropdown: true,
+    dropdownItems: [
       { label: 'About', href: '/about' },
       { label: 'Education', href: '/education' },
       { label: 'Corporate', href: '/corporate' },
     ],
   },
-  { label: 'Artist Portal', href: '/artists/signup' },
+  { label: 'Artist Portal', href: '/artists/signup', isDropdown: false, dropdownItems: [] },
 ]
 
-function DropdownMenu({ items, headerSolid, onNavigate }: {
+const NAV_QUERY = `*[_type == "navigation"][0] {
+  logoText, ctaLabel, ctaHref,
+  navLinks[] { label, href, isDropdown, dropdownItems[] { label, href } }
+}`
+
+interface NavItem {
+  label: string
+  href: string
+  isDropdown?: boolean
+  dropdownItems?: { label: string; href: string }[]
+}
+
+interface NavData {
+  logoText?: string
+  ctaLabel?: string
+  ctaHref?: string
+  navLinks?: NavItem[]
+}
+
+function DropdownMenu({ items, onNavigate }: {
   items: { label: string; href: string }[]
-  headerSolid: boolean
   onNavigate?: () => void
 }) {
   return (
@@ -52,11 +70,19 @@ function DropdownMenu({ items, headerSolid, onNavigate }: {
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const location = useLocation()
   const { toggleCart, getCartCount } = useMarketplaceStore()
   const cartCount = getCartCount()
+  const { data: navData } = useSanity<NavData | null>(NAV_QUERY, null)
+
+  const logoText = navData?.logoText || 'ERA'
+  const ctaLabel = navData?.ctaLabel || 'Shop Art'
+  const ctaHref = navData?.ctaHref || '/marketplace'
+  const navLinks: NavItem[] = (navData?.navLinks && navData.navLinks.length > 0)
+    ? navData.navLinks
+    : FALLBACK_NAV
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 40)
@@ -65,18 +91,14 @@ export function Header() {
   }, [])
 
   useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
+    document.body.style.overflow = mobileOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [mobileOpen])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false)
+        setDropdownOpen(null)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -84,68 +106,60 @@ export function Header() {
   }, [])
 
   useEffect(() => {
-    setDropdownOpen(false)
+    setDropdownOpen(null)
     setMobileOpen(false)
   }, [location.pathname])
 
   const isInnerPage = location.pathname !== '/'
   const headerSolid = isScrolled || isInnerPage
-  const institutionPaths = ['/about', '/education', '/corporate']
-  const isInstitutionActive = institutionPaths.includes(location.pathname)
 
   return (
     <header
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        headerSolid
-          ? 'bg-offwhite/95 backdrop-blur-md shadow-sm'
-          : 'bg-transparent'
+        headerSolid ? 'bg-offwhite/95 backdrop-blur-md shadow-sm' : 'bg-transparent'
       )}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between md:h-20">
           <Link to="/" className="flex items-center gap-3 group" aria-label="ERA Home">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-offwhite font-heading font-bold text-lg">
-              E
+              {logoText.charAt(0)}
             </div>
-            <span
-              className={cn(
-                'font-heading text-lg font-semibold transition-colors',
-                headerSolid ? 'text-primary' : 'text-offwhite'
-              )}
-            >
-              ERA
+            <span className={cn('font-heading text-lg font-semibold transition-colors', headerSolid ? 'text-primary' : 'text-offwhite')}>
+              {logoText}
             </span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
             {navLinks.map((link) => {
-              if (link.children) {
+              if (link.isDropdown && link.dropdownItems && link.dropdownItems.length > 0) {
+                const isActive = link.dropdownItems.some(c => c.href === location.pathname)
                 return (
                   <div key={link.label} ref={dropdownRef} className="relative">
                     <button
-                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      onClick={() => setDropdownOpen(dropdownOpen === link.label ? null : link.label)}
                       className={cn(
                         'flex items-center gap-1 text-sm font-medium transition-colors hover:text-accent',
                         headerSolid ? 'text-stone' : 'text-offwhite/90',
-                        isInstitutionActive && 'text-accent'
+                        isActive && 'text-accent'
                       )}
-                      aria-expanded={dropdownOpen}
+                      aria-expanded={dropdownOpen === link.label}
                       aria-haspopup="true"
                     >
                       {link.label}
-                      <ChevronDown size={14} className={cn('transition-transform', dropdownOpen && 'rotate-180')} />
+                      <ChevronDown size={14} className={cn('transition-transform', dropdownOpen === link.label && 'rotate-180')} />
                     </button>
                     <AnimatePresence>
-                      {dropdownOpen && (
-                        <DropdownMenu items={link.children} headerSolid={headerSolid} />
+                      {dropdownOpen === link.label && (
+                        <DropdownMenu items={link.dropdownItems} onNavigate={() => setDropdownOpen(null)} />
                       )}
                     </AnimatePresence>
                   </div>
                 )
               }
 
-              const isRoute = link.href.startsWith('/') && !link.href.includes('#')
+              const isRoute = link.href && link.href.startsWith('/') && !link.href.includes('#')
               if (isRoute) {
                 return (
                   <Link
@@ -162,33 +176,23 @@ export function Header() {
                 )
               }
               return (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className={cn(
-                    'text-sm font-medium transition-colors hover:text-accent',
-                    headerSolid ? 'text-stone' : 'text-offwhite/90'
-                  )}
+                <a key={link.label} href={link.href || '#'}
+                  className={cn('text-sm font-medium transition-colors hover:text-accent', headerSolid ? 'text-stone' : 'text-offwhite/90')}
                 >
                   {link.label}
                 </a>
               )
             })}
 
-            {/* Cart icon */}
             <button
               onClick={toggleCart}
-              className={cn(
-                'relative p-2 rounded-lg transition-colors',
-                headerSolid ? 'text-stone hover:text-primary' : 'text-offwhite/90 hover:text-accent'
-              )}
+              className={cn('relative p-2 rounded-lg transition-colors', headerSolid ? 'text-stone hover:text-primary' : 'text-offwhite/90 hover:text-accent')}
               aria-label="Shopping cart"
             >
               <ShoppingCart size={18} />
               {cartCount > 0 && (
                 <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
+                  initial={{ scale: 0 }} animate={{ scale: 1 }}
                   className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-accent text-primary text-[9px] font-bold rounded-full flex items-center justify-center"
                 >
                   {cartCount}
@@ -197,18 +201,15 @@ export function Header() {
             </button>
 
             <Link
-              to="/marketplace"
+              to={ctaHref}
               className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-primary transition-all hover:bg-accent/80 hover:scale-105"
             >
-              Shop Art
+              {ctaLabel}
             </Link>
           </nav>
 
           <button
-            className={cn(
-              'md:hidden p-2 rounded-lg transition-colors',
-              headerSolid ? 'text-stone' : 'text-offwhite'
-            )}
+            className={cn('md:hidden p-2 rounded-lg transition-colors', headerSolid ? 'text-stone' : 'text-offwhite')}
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileOpen}
@@ -229,20 +230,14 @@ export function Header() {
           >
             <nav className="flex flex-col items-center justify-center gap-8 pt-20" aria-label="Mobile navigation">
               {navLinks.map((link, i) => {
-                if (link.children) {
+                if (link.isDropdown && link.dropdownItems && link.dropdownItems.length > 0) {
                   return (
-                    <motion.div
-                      key={link.label}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.08 }}
+                    <motion.div key={link.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
                       className="flex flex-col items-center gap-3"
                     >
                       <span className="text-lg font-heading text-offwhite/50 uppercase tracking-wider text-xs">{link.label}</span>
-                      {link.children.map((child) => (
-                        <Link
-                          key={child.label}
-                          to={child.href}
+                      {link.dropdownItems.map((child) => (
+                        <Link key={child.label} to={child.href}
                           className="text-xl font-heading text-offwhite hover:text-accent transition-colors"
                           onClick={() => setMobileOpen(false)}
                         >
@@ -252,45 +247,24 @@ export function Header() {
                     </motion.div>
                   )
                 }
-                const isRoute = link.href.startsWith('/') && !link.href.includes('#')
+                const isRoute = link.href && link.href.startsWith('/') && !link.href.includes('#')
                 return (
-                  <motion.div
-                    key={link.label}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                  >
+                  <motion.div key={link.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
                     {isRoute ? (
-                      <Link
-                        to={link.href}
-                        className="text-2xl font-heading text-offwhite hover:text-accent transition-colors"
-                        onClick={() => setMobileOpen(false)}
-                      >
+                      <Link to={link.href} className="text-2xl font-heading text-offwhite hover:text-accent transition-colors" onClick={() => setMobileOpen(false)}>
                         {link.label}
                       </Link>
                     ) : (
-                      <a
-                        href={link.href}
-                        className="text-2xl font-heading text-offwhite hover:text-accent transition-colors"
-                        onClick={() => setMobileOpen(false)}
-                      >
+                      <a href={link.href || '#'} className="text-2xl font-heading text-offwhite hover:text-accent transition-colors" onClick={() => setMobileOpen(false)}>
                         {link.label}
                       </a>
                     )}
                   </motion.div>
                 )
               })}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: navLinks.length * 0.08 }}
-              >
-                <Link
-                  to="/marketplace"
-                  className="mt-4 rounded-full bg-accent px-8 py-3 text-lg font-semibold text-primary"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Shop Art
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: navLinks.length * 0.08 }}>
+                <Link to={ctaHref} className="mt-4 rounded-full bg-accent px-8 py-3 text-lg font-semibold text-primary" onClick={() => setMobileOpen(false)}>
+                  {ctaLabel}
                 </Link>
               </motion.div>
             </nav>

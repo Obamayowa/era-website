@@ -3,12 +3,36 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, SlidersHorizontal, X, Heart, ShoppingCart, Shield, Award, Recycle } from 'lucide-react'
 import { useMarketplaceStore } from '@/stores/useMarketplaceStore'
 import { SectionHeading } from '@/components/institution/SectionHeading'
+import { useSanity } from '@/hooks/useSanity'
 import type { MarketplaceListing } from '@/data/marketplaceData'
 import { cn } from '@/lib/utils'
+
+const MARKETPLACE_QUERY = `*[_type == "marketplacePage"][0] {
+  headline, subheadline, cartDrawerTitle,
+  cartEmptyText, checkoutButtonLabel, shippingInfo,
+  trustStrip[] { icon, label }
+}`
 
 const MATERIAL_FILTERS = ['All', 'Plastic', 'Metal', 'Textile', 'Paper', 'E-Waste', 'Organic'] as const
 const SIZE_FILTERS = ['All', 'S', 'M', 'L', 'Installation'] as const
 const CERT_FILTERS = ['All', 'Level 2', 'Level 3'] as const
+
+const FALLBACK_TRUST = [
+  { icon: '🛡️', label: 'Verified Provenance' },
+  { icon: '🏆', label: 'Certified Artists' },
+  { icon: '♻️', label: 'Environmental Impact' },
+  { icon: '🛒', label: 'Lowest Fees — 15%' },
+]
+
+interface MarketplaceData {
+  headline?: string
+  subheadline?: string
+  cartDrawerTitle?: string
+  cartEmptyText?: string
+  checkoutButtonLabel?: string
+  shippingInfo?: string
+  trustStrip?: { icon?: string; label?: string }[]
+}
 
 function CertBadge({ level }: { level: string }) {
   if (level === 'Level 3') return (
@@ -43,19 +67,17 @@ function ListingCard({ listing }: { listing: MarketplaceListing }) {
   const wishlisted = isInWishlist(listing.id)
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
+    <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
       className="group relative rounded-2xl bg-offwhite border border-stone/10 overflow-hidden hover:shadow-xl hover:border-accent/20 transition-all duration-300"
     >
-      {/* Image */}
       <div className="relative aspect-square overflow-hidden">
-        <div className={`h-full w-full bg-gradient-to-br ${listing.gradient} transition-transform duration-500 group-hover:scale-105`} />
+        {(listing as any).imageUrl ? (
+          <img src={(listing as any).imageUrl} alt={listing.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        ) : (
+          <div className={`h-full w-full bg-gradient-to-br ${listing.gradient} transition-transform duration-500 group-hover:scale-105`} />
+        )}
         <StatusBadge status={listing.status} />
-        <button
-          onClick={() => toggleWishlist(listing.id)}
+        <button onClick={() => toggleWishlist(listing.id)}
           className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-offwhite/90 backdrop-blur-sm shadow-sm hover:bg-offwhite transition-colors"
           aria-label="Toggle wishlist"
         >
@@ -65,8 +87,6 @@ function ListingCard({ listing }: { listing: MarketplaceListing }) {
           <CertBadge level={listing.certification} />
         </div>
       </div>
-
-      {/* Info */}
       <div className="p-5">
         <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-accent">{listing.material}</div>
         <h3 className="font-heading text-lg font-bold text-primary leading-tight line-clamp-1">{listing.title}</h3>
@@ -77,14 +97,9 @@ function ListingCard({ listing }: { listing: MarketplaceListing }) {
             {listing.status === 'sold' ? 'Sold' : `€${listing.price.toLocaleString()}`}
           </span>
           {listing.status === 'available' && (
-            <button
-              onClick={() => addToCart(listing)}
-              disabled={inCart}
-              className={cn(
-                'flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all',
-                inCart
-                  ? 'bg-accent/10 text-accent cursor-default'
-                  : 'bg-primary text-offwhite hover:bg-primary-light hover:scale-105'
+            <button onClick={() => addToCart(listing)} disabled={inCart}
+              className={cn('flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all',
+                inCart ? 'bg-accent/10 text-accent cursor-default' : 'bg-primary text-offwhite hover:bg-primary-light hover:scale-105'
               )}
             >
               <ShoppingCart size={13} />
@@ -102,31 +117,33 @@ function ListingCard({ listing }: { listing: MarketplaceListing }) {
   )
 }
 
-function CartDrawer() {
+function CartDrawer({ data }: { data: MarketplaceData | null }) {
   const { cart, isCartOpen, closeCart, removeFromCart, getCartSubtotal } = useMarketplaceStore()
+  const drawerTitle = data?.cartDrawerTitle || 'Your Cart'
+  const emptyText = data?.cartEmptyText || 'Your cart is empty'
+  const checkoutLabel = data?.checkoutButtonLabel || 'Proceed to Checkout'
+  const shippingInfo = data?.shippingInfo || 'Secure checkout · Verified artworks only'
+
   return (
     <AnimatePresence>
       {isCartOpen && (
         <>
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-stone/40 backdrop-blur-sm z-40"
-            onClick={closeCart}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-stone/40 backdrop-blur-sm z-40" onClick={closeCart}
           />
-          <motion.aside
-            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+          <motion.aside initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className="fixed right-0 top-0 h-full w-full max-w-md bg-offwhite shadow-2xl z-50 flex flex-col"
           >
             <div className="flex items-center justify-between border-b border-stone/10 px-6 py-5">
-              <h2 className="font-heading text-xl font-bold text-primary">Your Cart ({cart.length})</h2>
+              <h2 className="font-heading text-xl font-bold text-primary">{drawerTitle} ({cart.length})</h2>
               <button onClick={closeCart} className="p-2 rounded-lg hover:bg-sand transition-colors"><X size={20} /></button>
             </div>
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {cart.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-48 text-stone/40">
                   <ShoppingCart size={40} className="mb-3" />
-                  <p className="text-sm">Your cart is empty</p>
+                  <p className="text-sm">{emptyText}</p>
                 </div>
               ) : cart.map(({ listing }) => (
                 <div key={listing.id} className="flex gap-4 items-start bg-sand/50 rounded-xl p-4">
@@ -147,9 +164,9 @@ function CartDrawer() {
                 <div className="flex justify-between text-sm"><span className="text-stone/60">Subtotal</span><span className="font-bold text-primary">€{getCartSubtotal().toLocaleString()}</span></div>
                 <div className="flex justify-between text-xs text-stone/40"><span>ERA Platform Fee (15%)</span><span>€{Math.round(getCartSubtotal() * 0.15).toLocaleString()}</span></div>
                 <button className="w-full rounded-full bg-primary text-offwhite py-3.5 font-semibold hover:bg-primary-light transition-colors mt-2">
-                  Proceed to Checkout
+                  {checkoutLabel}
                 </button>
-                <p className="text-center text-xs text-stone/40">Secure checkout · Verified artworks only</p>
+                <p className="text-center text-xs text-stone/40">{shippingInfo}</p>
               </div>
             )}
           </motion.aside>
@@ -160,17 +177,21 @@ function CartDrawer() {
 }
 
 export function MarketplacePage() {
-  const {
-    filteredListings, materialFilter, certificationFilter, sizeFilter, priceRange, searchQuery,
+  const { filteredListings, materialFilter, certificationFilter, sizeFilter, priceRange, searchQuery,
     setMaterialFilter, setCertificationFilter, setSizeFilter, setPriceRange, setSearchQuery, clearFilters
   } = useMarketplaceStore()
 
+  const { data } = useSanity<MarketplaceData | null>(MARKETPLACE_QUERY, null)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const hasActiveFilters = materialFilter !== 'All' || certificationFilter !== 'All' || sizeFilter !== 'All' || searchQuery !== ''
 
+  const headline = data?.headline || 'Collect Art. Change the World.'
+  const subheadline = data?.subheadline || 'Every purchase directly supports a verified ERA artist and diverts waste from landfills. Only 15% platform fee — the lowest in the industry.'
+  const trustItems = (data?.trustStrip && data.trustStrip.length > 0) ? data.trustStrip : FALLBACK_TRUST
+
   return (
     <main className="min-h-screen bg-offwhite">
-      <CartDrawer />
+      <CartDrawer data={data} />
 
       {/* Hero */}
       <section className="relative bg-primary pt-32 pb-16 lg:pt-40 lg:pb-20 overflow-hidden">
@@ -179,11 +200,9 @@ export function MarketplacePage() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">ERA Marketplace</span>
             <h1 className="mt-3 font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-offwhite leading-tight">
-              Collect Art.<br />Change the World.
+              {headline}
             </h1>
-            <p className="mt-4 text-offwhite/60 text-lg max-w-xl leading-relaxed">
-              Every purchase directly supports a verified ERA artist and diverts waste from landfills. Only 15% platform fee — the lowest in the industry.
-            </p>
+            <p className="mt-4 text-offwhite/60 text-lg max-w-xl leading-relaxed">{subheadline}</p>
           </motion.div>
           <div className="mt-8 flex flex-wrap gap-6 text-sm text-offwhite/50">
             {[['15%', 'Lowest platform fee'], ['100%', 'Verified materials'], ['Free', 'Shipping over €500']].map(([v, l]) => (
@@ -198,17 +217,15 @@ export function MarketplacePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone/40" />
-            <input
-              type="text"
-              placeholder="Search artworks, artists..."
-              value={searchQuery}
+            <input type="text" placeholder="Search artworks, artists..." value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="w-full rounded-full border border-stone/15 bg-sand/50 pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-accent/50 transition-colors"
             />
           </div>
-          <button
-            onClick={() => setFiltersOpen(!filtersOpen)}
-            className={cn('flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all', filtersOpen || hasActiveFilters ? 'border-accent bg-accent/10 text-accent' : 'border-stone/15 text-stone hover:border-accent/30')}
+          <button onClick={() => setFiltersOpen(!filtersOpen)}
+            className={cn('flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all',
+              filtersOpen || hasActiveFilters ? 'border-accent bg-accent/10 text-accent' : 'border-stone/15 text-stone hover:border-accent/30'
+            )}
           >
             <SlidersHorizontal size={15} />
             Filters
@@ -221,12 +238,9 @@ export function MarketplacePage() {
           )}
           <span className="ml-auto text-sm text-stone/40">{filteredListings.length} works</span>
         </div>
-
-        {/* Expanded filters */}
         <AnimatePresence>
           {filtersOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden border-t border-stone/10"
             >
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -255,8 +269,7 @@ export function MarketplacePage() {
                     Price: up to €{priceRange[1].toLocaleString()}
                   </label>
                   <input type="range" min={0} max={200000} step={500} value={priceRange[1]}
-                    onChange={e => setPriceRange([0, Number(e.target.value)])}
-                    className="w-full accent-accent"
+                    onChange={e => setPriceRange([0, Number(e.target.value)])} className="w-full accent-accent"
                   />
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-wider text-stone/50 mb-2 block mt-3">Size</label>
@@ -287,9 +300,7 @@ export function MarketplacePage() {
           ) : (
             <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
               <AnimatePresence mode="popLayout">
-                {filteredListings.map(listing => (
-                  <ListingCard key={listing.id} listing={listing} />
-                ))}
+                {filteredListings.map(listing => <ListingCard key={listing.id} listing={listing} />)}
               </AnimatePresence>
             </motion.div>
           )}
@@ -301,18 +312,12 @@ export function MarketplacePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading label="Why ERA" title="Buy With Confidence" subtitle="Every artwork sold through ERA carries verified proof of its sustainable origins and supports the artist directly." />
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            {[
-              { icon: Shield, title: 'Verified Provenance', desc: 'Blockchain-anchored material origin records' },
-              { icon: Award, title: 'Certified Artists', desc: 'Multi-tier artist verification system' },
-              { icon: Recycle, title: 'Environmental Impact', desc: 'Every sale documented waste diverted' },
-              { icon: ShoppingCart, title: 'Lowest Fees', desc: 'Only 15% — vs 50% at traditional galleries' },
-            ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="flex flex-col items-center">
-                <div className="w-12 h-12 bg-primary/5 rounded-2xl flex items-center justify-center mb-3">
-                  <Icon size={22} className="text-primary" />
+            {trustItems.map(({ icon, label }) => (
+              <div key={label} className="flex flex-col items-center">
+                <div className="w-12 h-12 bg-primary/5 rounded-2xl flex items-center justify-center mb-3 text-2xl">
+                  {icon}
                 </div>
-                <h4 className="font-heading font-bold text-primary text-sm">{title}</h4>
-                <p className="mt-1 text-xs text-stone/60 leading-relaxed">{desc}</p>
+                <h4 className="font-heading font-bold text-primary text-sm">{label}</h4>
               </div>
             ))}
           </div>
