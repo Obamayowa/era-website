@@ -14,6 +14,19 @@ const SANITY_AUCTIONS_QUERY = `*[_type == "auctionListing" && isLive == true] | 
   "imageUrl": image.asset->url
 }`
 
+const AUCTIONS_CACHE_KEY = 'era_sanity_auctions'
+
+function readAuctionsCache(): any[] | null {
+  try {
+    const raw = localStorage.getItem(AUCTIONS_CACHE_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+function writeAuctionsCache(data: any[]): void {
+  try { localStorage.setItem(AUCTIONS_CACHE_KEY, JSON.stringify(data)) } catch {}
+}
+
 const GRADIENTS = [
   'from-blue-700 to-teal-500',
   'from-amber-700 to-orange-500',
@@ -231,7 +244,11 @@ function BidModal({ auctionId, auctions, onClose }: { auctionId: string; auction
 
 export function AuctionsPage() {
   const { auctionCategoryFilter, setAuctionCategoryFilter, openBidModal, closeBidModal, bidModalAuctionId } = useMarketplaceStore()
-  const [auctions, setAuctions] = useState<AuctionListing[]>(FALLBACK_AUCTIONS)
+  const [auctions, setAuctions] = useState<AuctionListing[]>(() => {
+    const cached = readAuctionsCache()
+    if (cached && cached.length > 0) return cached.map(mapSanityToAuction)
+    return FALLBACK_AUCTIONS
+  })
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -239,10 +256,19 @@ export function AuctionsPage() {
     sanityClient.fetch(SANITY_AUCTIONS_QUERY)
       .then((results: any[]) => {
         if (results && results.length > 0) {
+          writeAuctionsCache(results)
           setAuctions(results.map(mapSanityToAuction))
         }
       })
-      .catch(err => console.warn('[Auctions] Sanity fetch failed:', err))
+      .catch(() => {
+        const cached = readAuctionsCache()
+        if (cached && cached.length > 0) {
+          setAuctions(cached.map(mapSanityToAuction))
+          console.info('[Auctions] Sanity unreachable — serving last cached auctions')
+        } else {
+          console.warn('[Auctions] Sanity unreachable and no cache found, using hardcoded data')
+        }
+      })
       .finally(() => setLoaded(true))
   }, [loaded])
 

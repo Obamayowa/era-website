@@ -32,6 +32,19 @@ const SANITY_ARTWORKS_QUERY = `*[_type == "artwork"] | order(_createdAt desc) {
   certificationLevel, price, year, slug
 }`
 
+const GALLERY_CACHE_KEY = 'era_sanity_gallery_artworks'
+
+function readGalleryCache(): any[] | null {
+  try {
+    const raw = localStorage.getItem(GALLERY_CACHE_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+function writeGalleryCache(data: any[]): void {
+  try { localStorage.setItem(GALLERY_CACHE_KEY, JSON.stringify(data)) } catch {}
+}
+
 interface GalleryState {
   artworks: GalleryArtwork[]
   filteredArtworks: GalleryArtwork[]
@@ -103,11 +116,9 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
 
   loadSanityArtworks: async () => {
     if (get().sanityLoaded) return
-    try {
-      const results = await sanityClient.fetch(SANITY_ARTWORKS_QUERY)
-      if (!results || results.length === 0) return
 
-      const mapped: GalleryArtwork[] = results.map((a: any, i: number) => ({
+    function applyResults(rawResults: any[]) {
+      const mapped: GalleryArtwork[] = rawResults.map((a: any, i: number) => ({
         id: a._id,
         title: a.title || 'Untitled',
         artist: a.artist?.name || 'Unknown Artist',
@@ -124,15 +135,33 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
         span: SPANS[i % SPANS.length],
         year: a.year || new Date().getFullYear(),
       }))
-
       const { materialFilter, certificationFilter, searchQuery } = get()
       set({
         artworks: mapped,
         filteredArtworks: filterArtworks(mapped, materialFilter, certificationFilter, searchQuery),
         sanityLoaded: true,
       })
+    }
+
+    // Seed from cache immediately so the gallery isn't empty on first render
+    const cached = readGalleryCache()
+    if (cached && cached.length > 0) {
+      applyResults(cached)
+    }
+
+    try {
+      const results = await sanityClient.fetch(SANITY_ARTWORKS_QUERY)
+      if (results && results.length > 0) {
+        writeGalleryCache(results)  // persist fresh data
+        applyResults(results)
+      }
     } catch (err) {
-      console.warn('[Gallery] Sanity fetch failed, using fallback data:', err)
+      if (!cached || cached.length === 0) {
+        // Nothing in cache either — stay on hardcoded galleryArtworks
+        console.warn('[Gallery] Sanity unreachable and no cache found, using hardcoded data')
+      } else {
+        console.info('[Gallery] Sanity unreachable — serving last cached artworks')
+      }
     }
   },
 
