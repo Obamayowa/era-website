@@ -13,5 +13,8 @@
     "react-dom": "^18.2.0",
     "sanity": "^3.0.0",
     "styled-components": "^6.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.114.0"
   }
 }
